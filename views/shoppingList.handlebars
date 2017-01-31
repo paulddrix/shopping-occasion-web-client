@@ -1,0 +1,55 @@
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script type="text/javascript" charset="utf-8">
+  window.onload = function() {
+    var socket = io.connect('localhost:8988/shoppingList/');
+    socket.on('connect', function () {
+      console.log('connected');
+    }).on('disconnect', function () {
+      console.log('disconnected');
+    });
+
+    // Handle the form submition with js
+    document.getElementById('newListItemForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var newListItem = document.getElementById('newListItem');
+      socket.emit('event', {
+        listItem: newListItem.value,
+      });
+      newListItem.value = '';
+      return false;
+    });
+    socket.on('event', function(data) {
+			console.log('data in event', data);
+      // Get the <ul> element to insert a new node
+			var shoppingListContainer = document.getElementById("shopping-list-container");
+			// Create a <li> nodefor list item
+			var newItem = document.createElement("LI");       
+      // Create a <span> node
+			var newItemText = document.createElement("SPAN");	 
+      //Create a <text> node
+			var newItemTextnode = document.createTextNode(data.listItem);
+      // append textnode to <span>
+			newItemText.appendChild(newItemTextnode);
+      // append <span> to <li>		
+      newItem.appendChild(newItemText);		
+      // Insert <li> before the first child of <ul>
+      shoppingListContainer.insertBefore(newItem, shoppingListContainer.childNodes[0]);  
+	      shoppingListContainer.scrollTop = shoppingListContainer.scrollHeight;
+      });
+  };
+</script>
+<p>
+	Shopping List.
+</p>
+<form id="newListItemForm">
+  <input type="text" name="newListItem" id="newListItem" placeholder="Add list item">
+  <button type="submit">Add</button>
+</form>
+
+<ul id="shopping-list-container">
+	{{#each shoppingList}}
+		<li>
+     <span>{{this}}</span>
+		</li>
+	{{/each}}
+</ul>
