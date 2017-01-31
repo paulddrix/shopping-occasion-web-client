@@ -10,6 +10,7 @@ module.exports = (app) => {
     const reqRef = req;
     // object to send to the view
     const dataForView ={};
+    dataForView.api_uri = process.env.API_URI;
     // Request shopping list from API
    async.series([
      (done) => {
