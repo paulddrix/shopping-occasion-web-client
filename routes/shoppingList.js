@@ -14,7 +14,7 @@ module.exports = (app) => {
     // Request shopping list from API
    async.series([
      (done) => {
-     request.get(`${process.env.API_URI}/listItems`)
+     request.get(`${process.env.API_URI}listItems`)
        .set('content-type', 'application/json')
        .end((apiErr, apiRes) => {
          if (apiErr) {
