@@ -23,8 +23,22 @@ module.exports = (app) => {
          }
          handyUtils.debug(`apiRes at ${process.env.API_URI}/listItems`, apiRes);
          if (apiRes) {
-          dataForView.shoppingList = apiRes.body.shoppingList;
-          done();
+          if (apiRes.body.shoppingList.length === 0) {
+            dataForView.shoppingList = [];
+              done();
+            } else {
+              let parsedItemsArray = [];
+          for (var i = 0; i < apiRes.body.shoppingList.length; i++) {
+            let parsedItem = JSON.parse(apiRes.body.shoppingList[i]);
+            parsedItemsArray.push(parsedItem);
+            parsedItem = '';
+            if ((apiRes.body.shoppingList.length -1) === i) {
+              console.log('done in the loop, i:', i);
+              dataForView.shoppingList = parsedItemsArray;
+              done();
+            }
+          }
+        }
          }
        });
      },

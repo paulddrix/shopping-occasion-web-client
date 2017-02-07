@@ -1,6 +1,9 @@
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script type="text/javascript" charset="utf-8">
   window.onload = function() {
+    // Get the <ul> element to insert a new node
+    var shoppingListContainer = document.getElementById("shopping-list-container");
+    console.log(shoppingListContainer);
     var socket = io.connect('{{api_uri}}shoppingList/');
     socket.on('connect', function () {
       console.log('connected');
@@ -13,30 +16,94 @@
       e.preventDefault();
       var newListItem = document.getElementById('newListItem');
       socket.emit('event', {
-        listItem: newListItem.value,
+        text: newListItem.value,
       });
       newListItem.value = '';
       return false;
     });
     socket.on('event', function(data) {
 			console.log('data in event', data);
-      // Get the <ul> element to insert a new node
-			var shoppingListContainer = document.getElementById("shopping-list-container");
-			// Create a <li> nodefor list item
-			var newItem = document.createElement("LI");       
+      var parsedData = JSON.parse(data);
+      console.log(parsedData);
+      if (parsedData.action) {
+        let liItemNodes = document.getElementsByClassName('remove-item-js');
+        console.log('incoming parsedData.itemId', parsedData.itemId);
+        console.log(shoppingListContainer);
+        for (var i = 0; i < liItemNodes.length; i++) {
+          if (liItemNodes[i].dataset.itemid === parsedData.itemId) {
+            console.log('Match, element:',liItemNodes[i]);
+            // send in the correct li to remove
+            removeItem(liItemNodes[i]);
+            
+          }
+        }
+      } else {
+        createListItem(parsedData, shoppingListContainer);
+      }
+			
+      });
+
+    // click event for spans with remove-item-js class
+    if (document.getElementsByClassName('remove-item-js')) {
+    //array of button element with the remove-item-js class
+    var removeitemJsBtns = document.getElementsByClassName('remove-item-js');
+      console.log('removeitemJsBtns ',removeitemJsBtns);
+      //for loop to assign click event listener to each button
+      for (var i = 0; i < removeitemJsBtns.length; i++) {
+        removeitemJsBtns[i].addEventListener('click',function(e) {
+          console.log('clicked a btn to remove item');
+          var itemId = this.dataset.itemid;
+          var itemText = this.dataset.text;
+          var createBy = this.dataset.createdby;
+          console.log(itemId);
+          // emit event to remove the item from db
+          socket.emit('event', {
+            action:'remove',
+            text: itemText,
+            itemId: itemId,
+            createBy: createBy
+          });
+          //let currentLiNode = this.parentElement;
+          // remove it from the shopping-list-container
+          //console.log(currentLiNode);
+          removeItem(this);
+        });
+      }
+    }
+  };
+  // function to remove and item, must pass in the element to remove
+    function removeItem(liNodeToRemove){
+      console.log('liNodeToRemove at remove Function', liNodeToRemove);
+      let elmnt = liNodeToRemove.parentElement;
+      elmnt.parentElement.removeChild(elmnt);
+    }
+    // function to add li to list, must pass in data for li
+    function createListItem(dataForLi,shoppingListContainer){
+      // Create a <li> nodefor list item
+      var newItem = document.createElement("LI");       
       // Create a <span> node
-			var newItemText = document.createElement("SPAN");	 
+      var newItemText = document.createElement("SPAN");  
       //Create a <text> node
-			var newItemTextnode = document.createTextNode(data.listItem);
+      var newItemTextnode = document.createTextNode(dataForLi.text);
+      // Create a <span> node for item id
+      var newItemId = document.createElement("BUTTON");
+      // append <span> to <li>    
+      newItemId.dataset.itemid = dataForLi.itemId;
+      newItemId.dataset.text = dataForLi.text;
+      newItemId.dataset.createBy = dataForLi.createdBy;
+      newItemId.innerHTML = 'Remove';
+      newItemId.className = 'remove-item-js';
       // append textnode to <span>
-			newItemText.appendChild(newItemTextnode);
-      // append <span> to <li>		
-      newItem.appendChild(newItemText);		
+      newItemText.appendChild(newItemTextnode);
+      // append <span> to <li>    
+      newItem.appendChild(newItemText);
+      // newItem.appendChild('&nbsp;');
+      // append remove <span> to <li>   
+      newItem.appendChild(newItemId);   
       // Insert <li> before the first child of <ul>
       shoppingListContainer.insertBefore(newItem, shoppingListContainer.childNodes[0]);  
-	      shoppingListContainer.scrollTop = shoppingListContainer.scrollHeight;
-      });
-  };
+     shoppingListContainer.scrollTop = shoppingListContainer.scrollHeight;
+    }
 </script>
 <p>
 	Shopping List.
@@ -49,7 +116,8 @@
 <ul id="shopping-list-container">
 	{{#each shoppingList}}
 		<li>
-     <span>{{this}}</span>
+   <span>{{this.text}}</span>&nbsp;
+   <button class="remove-item-js" data-itemid="{{this.itemId}}" data-createdby="{{this.createdBy}}" data-text="{{this.text}}" onclick="removeItem(this)">Remove</button>
 		</li>
 	{{/each}}
 </ul>
